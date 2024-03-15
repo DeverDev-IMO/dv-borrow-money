@@ -43,9 +43,9 @@ $content = '
   <table style="width:100%;margin-top:5px;" cellpadding=0 cellspacing=0 border="0">
       <tr>
           <td style="width:40%;text-align:left;">
-              <span style="border-bottom:2px;font-size:16px;"><b>ลูกหนี้การค้าไม่รวม NPL</b> </span>
+              <span style="border-bottom:2px;font-size:16px;"><b>รายงานลูกหนี้การค้ารวม ตั้งแต่เปิดมายังไม่ปิดบัญชี</b> </span>
           </td>
-          <td style="width:15%;text-align:left;">
+          <td style="width:20%;text-align:left;">
               <span style="border-bottom:2px;font-size:13px;">ณ. วันที่ &ensp;' . changeDate($date_start) . ' </span>
           </td>
           <td style="width:15%;text-align:left;">
@@ -54,7 +54,7 @@ $content = '
           <td style="width:20%;" align="left">
           สายบริการ : ' . $clientlinework['lw_code'] . '-' . $clientlinework['lw_name'] . '
           </td>
-          
+
       </tr>
   </table>
   <table style="margin-top:12px;width:100%;border-collapse: collapse;" cellpadding=3 cellspacing=1 border="1">
@@ -62,7 +62,7 @@ $content = '
             <td style="background-color: #D3D3D3;padding:7px;text-align:center;font-size:13px;">ลำดับ</td>
             <td style="background-color: #D3D3D3;font-size:13px;">เลขที่สัญญา</td>
             <td style="background-color: #D3D3D3;font-size:13px;">รหัสลูกค้า</td>
-            <td style="background-color: #D3D3D3;font-size:13px;">ชื่อ-สกุล</td>
+            <td style="background-color: #D3D3D3;font-size:13px;">ชื่อ-นามสกุล</td>
             <td style="background-color: #D3D3D3;font-size:13px;">เบอร์โทรติดต่อ</td>
             <td style="background-color: #D3D3D3;font-size:13px;">วันที่เริ่มสัญญา</td>
             <td style="background-color: #D3D3D3;font-size:13px;">วันที่หมดสัญญา</td>
@@ -73,16 +73,13 @@ $content = '
 $i = 1;
 $ii = 0;
 $sumall = 0;
-foreach ($report->listreportDebtorType6("contract", $date_start, $date_end) as $client) :
+foreach ($report->listreportDebtorType5("contract", $date_start, $date_end) as $client) :
     $clientsumpayments = $report->getInfoSumPayments($client['contract_id']); ////รวมยอดชำระเงินของเเต่ละคน
-
     $deleteDate = DateDiff($client['cash_date_end'], $date_start); //ฟังค์ชั้นลบวันที่หมดสัญญากับวันที่เลือก
 
     // $caloutstandingbalance = ($client['cash_principle'] + $client['cash_interest']) - $client['paysum_pay_amount'];
     $caloutstandingbalance = ($client['cash_principle'] + $client['cash_interest']) - $clientsumpayments['sumPaymentAmount'];
-    $ChkNplDate = date("Y-m-d", strtotime("+30day", strtotime($client['cash_date_end'])));
-    // if ($caloutstandingbalance > 0 && $ChkNplDate <= $date_start) {
-    if ($caloutstandingbalance > 0 && $ChkNplDate >= $date_start) {
+    if ($caloutstandingbalance > 0) {
         $content .= '
           <tr style="border: 1px solid black;">
             <td style="padding:6px;font-size:13px;text-align:center;">' . $i . '</td>
@@ -101,6 +98,7 @@ foreach ($report->listreportDebtorType6("contract", $date_start, $date_end) as $
         $ii++;
         $sumall = $sumall + $caloutstandingbalance;
     }
+
 endforeach;
 $content .= '<tr style="border: 1px solid black;background-color: #D3D3D3;">
                 <td style="padding:6px;font-size:13px;" colspan="8">รวม ' . $ii . ' คน</td>

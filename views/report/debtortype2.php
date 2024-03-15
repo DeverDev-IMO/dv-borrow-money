@@ -42,8 +42,8 @@ $content = '
 <div style="border: 0px solid black;padding:0px;">
   <table style="width:100%;margin-top:5px;" cellpadding=0 cellspacing=0 border="0">
       <tr>
-          <td style="width:40%;text-align:left;">
-              <span style="border-bottom:2px;font-size:16px;"><b>ลูกหนี้การค้าไม่รวม NPL</b> </span>
+          <td style="width:45%;text-align:left;">
+              <span style="border-bottom:2px;font-size:16px;"><b>รายงานลูกหนี้มียอดค้างมากกว่า 10 งวด และยังไม่ครบสัญญา</b> </span>
           </td>
           <td style="width:15%;text-align:left;">
               <span style="border-bottom:2px;font-size:13px;">ณ. วันที่ &ensp;' . changeDate($date_start) . ' </span>
@@ -62,7 +62,7 @@ $content = '
             <td style="background-color: #D3D3D3;padding:7px;text-align:center;font-size:13px;">ลำดับ</td>
             <td style="background-color: #D3D3D3;font-size:13px;">เลขที่สัญญา</td>
             <td style="background-color: #D3D3D3;font-size:13px;">รหัสลูกค้า</td>
-            <td style="background-color: #D3D3D3;font-size:13px;">ชื่อ-สกุล</td>
+            <td style="background-color: #D3D3D3;font-size:13px;">ชื่อ-นามสกุล</td>
             <td style="background-color: #D3D3D3;font-size:13px;">เบอร์โทรติดต่อ</td>
             <td style="background-color: #D3D3D3;font-size:13px;">วันที่เริ่มสัญญา</td>
             <td style="background-color: #D3D3D3;font-size:13px;">วันที่หมดสัญญา</td>
@@ -73,16 +73,52 @@ $content = '
 $i = 1;
 $ii = 0;
 $sumall = 0;
-foreach ($report->listreportDebtorType6("contract", $date_start, $date_end) as $client) :
+
+$dateToday = date("Y-m-d");
+$dateSelect = $date_start;
+foreach ($report->listreportDebtorType2("contract", $date_start, $date_end) as $client) :
     $clientsumpayments = $report->getInfoSumPayments($client['contract_id']); ////รวมยอดชำระเงินของเเต่ละคน
+    // $deleteDate = DateDiff($client['cash_date_end'], $date_start); //ฟังค์ชั้นลบวันที่หมดสัญญากับวันที่เลือก
 
-    $deleteDate = DateDiff($client['cash_date_end'], $date_start); //ฟังค์ชั้นลบวันที่หมดสัญญากับวันที่เลือก
+    ///////////////////////////ยอดค้างชำระ////////////////////////////////
+    $deleteDate = DateDiff($client['cash_date_end'], $dateSelect); //ฟังค์ชั้นลบวันที่เริ่มสัญญากับวันปัจจุบัน
 
-    // $caloutstandingbalance = ($client['cash_principle'] + $client['cash_interest']) - $client['paysum_pay_amount'];
-    $caloutstandingbalance = ($client['cash_principle'] + $client['cash_interest']) - $clientsumpayments['sumPaymentAmount'];
-    $ChkNplDate = date("Y-m-d", strtotime("+30day", strtotime($client['cash_date_end'])));
-    // if ($caloutstandingbalance > 0 && $ChkNplDate <= $date_start) {
-    if ($caloutstandingbalance > 0 && $ChkNplDate >= $date_start) {
+    $deleteDate1 = DateDiff($client['cash_date_start'], $dateSelect); //ฟังค์ชั้นลบวันที่เริ่มสัญญากับวันปัจจุบัน
+    // $deleteDate = $deleteDate + 1; //ลบวันที่เริ่มสัญญากับวันปัจจุบัน + 1
+    $deleteDate = $deleteDate; //ลบวันที่เริ่มสัญญากับวันปัจจุบัน
+
+    $numdateinstallmentsdaily = $deleteDate1 * $client['cash_installments_daily']; //หาค่างวดคูณจำนวนวันที่เริ่มสัญญาจนถึงวันที่ที่เลือก
+
+    // $numdateinstallmentsdaily = $numdateinstallmentsdaily - $client['paysum_pay_amount']; // ยอดที่ต้องชำระ - ยอดชำระเเล้ว
+    $numdateinstallmentsdaily = $numdateinstallmentsdaily - $clientsumpayments['sumPaymentAmount']; // ยอดที่ต้องชำระ - ยอดชำระเเล้ว
+    $overduetodateSelect = $numdateinstallmentsdaily; //ยอดค้างชําระ
+
+    // $overdue = ;
+    // $totaloverdue = ($client['cash_principle'] + $client['cash_interest']) - $client['paysum_pay_amount'];
+    $totaloverdue = ($client['cash_principle'] + $client['cash_interest']) - $clientsumpayments['sumPaymentAmount'];
+    if ($overduetodateSelect < $totaloverdue) {
+        $chkoverduetodateSelect = $overduetodateSelect;
+    } else {
+        $chkoverduetodateSelect = $totaloverdue;
+    }
+    ////////////////////////////////////////////////////////////////////
+    // $content .= '
+    //       <tr style="border: 1px solid black;">
+    //         <td style="padding:6px;font-size:13px;text-align:center;">' . $i . '</td>
+    //         <td style="padding:6px;font-size:13px;">' . $client['contract_number'] . '</td>
+    //         <td style="padding:6px;font-size:13px;">' . $client['cus_card_id'] . '</td>
+    //         <td style="padding:6px;font-size:13px;">' . $client['setpre_name'] . $client['cus_firstname'] . ' ' . $client['cus_lastname'] . '</td>
+    //         <td style="padding:6px;font-size:13px;">' . $client['cus_mobile_phone'] . '</td>
+    //         <td style="padding:6px;font-size:13px;">' . changeDate($client['cash_date_start']) . '</td>
+    //         <td style="padding:6px;font-size:13px;">' . changeDate($client['cash_date_end']) . '</td>
+    //         <td style="padding:6px;font-size:13px;" align="right">' . $deleteDate . '</td>
+    //         <td style="padding:6px;font-size:13px;" align="right">' . number_format(($client['cash_number_installment'] - $client['paysum_pay_installment'])) . '</td>
+    //         <td style="padding:6px;font-size:13px;" align="right">' . number_format(($client['cash_principle'] + $client['cash_interest']) - $client['paysum_pay_amount']) . '</td>
+    //       </tr>
+    //       ';
+    $caloutstandingbalance = $chkoverduetodateSelect / $client['cash_installments_daily'];
+    if ($chkoverduetodateSelect > 0 && $caloutstandingbalance > 10) {
+        // if ($chkoverduetodateSelect > 0) {
         $content .= '
           <tr style="border: 1px solid black;">
             <td style="padding:6px;font-size:13px;text-align:center;">' . $i . '</td>
@@ -94,12 +130,13 @@ foreach ($report->listreportDebtorType6("contract", $date_start, $date_end) as $
             <td style="padding:6px;font-size:13px;">' . changeDate($client['cash_date_end']) . '</td>
             <td style="padding:6px;font-size:13px;" align="right">' . $deleteDate . '</td>
             <td style="padding:6px;font-size:13px;" align="right">' . number_format(($client['cash_number_installment'] - $client['paysum_pay_installment'])) . '</td>
-            <td style="padding:6px;font-size:13px;" align="right">' . number_format($caloutstandingbalance) . '</td>
+            <td style="padding:6px;font-size:13px;" align="right">' . number_format($chkoverduetodateSelect) . '</td>
           </tr>
           ';
         $i++;
         $ii++;
-        $sumall = $sumall + $caloutstandingbalance;
+        // $sumall = $sumall + (($client['cash_principle'] + $client['cash_interest']) - $client['paysum_pay_amount']);
+        $sumall = $sumall + $chkoverduetodateSelect;
     }
 endforeach;
 $content .= '<tr style="border: 1px solid black;background-color: #D3D3D3;">

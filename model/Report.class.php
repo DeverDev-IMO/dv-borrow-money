@@ -526,4 +526,13 @@ class Report extends Connect
     }
     return $statement->fetchAll();
   }
+  public function getInfoSumPayments($id) //รวมยอดชำระเงินของเเต่ละคน
+  {
+    $pdo = parent::getInstance();
+    $sqlsumpay = "SELECT SUM(pay_number_money) as sumPaymentAmount FROM payments WHERE pay_contract_id=:pay_contract_id";
+    $statementsumpay = $pdo->prepare($sqlsumpay);
+    $statementsumpay->bindValue(":pay_contract_id", $id);
+    $statementsumpay->execute();
+    return $statementsumpay->fetch(PDO::FETCH_ASSOC);
+  }
 }

@@ -43,7 +43,7 @@ $content = '
   <table style="width:100%;margin-top:5px;" cellpadding=0 cellspacing=0 border="0">
       <tr>
           <td style="width:40%;text-align:left;">
-              <span style="border-bottom:2px;font-size:16px;"><b>ลูกหนี้การค้าไม่รวม NPL</b> </span>
+              <span style="border-bottom:2px;font-size:16px;"><b>รายงานลูกหนี้ที่หมดสัญญา</b> </span>
           </td>
           <td style="width:15%;text-align:left;">
               <span style="border-bottom:2px;font-size:13px;">ณ. วันที่ &ensp;' . changeDate($date_start) . ' </span>
@@ -73,9 +73,8 @@ $content = '
 $i = 1;
 $ii = 0;
 $sumall = 0;
-foreach ($report->listreportDebtorType6("contract", $date_start, $date_end) as $client) :
+foreach ($report->listreportDebtorType3("contract", $date_start, $date_end) as $client) :
     $clientsumpayments = $report->getInfoSumPayments($client['contract_id']); ////รวมยอดชำระเงินของเเต่ละคน
-
     $deleteDate = DateDiff($client['cash_date_end'], $date_start); //ฟังค์ชั้นลบวันที่หมดสัญญากับวันที่เลือก
 
     // $caloutstandingbalance = ($client['cash_principle'] + $client['cash_interest']) - $client['paysum_pay_amount'];

@@ -14,7 +14,6 @@ $report = new Report();
 // $client = $report->listreportsalesClient("contract");
 $clientlinework = $report->getInfoLinework("linework", $_POST['linework_id']);
 
-$datenow = date('Y-m-d');
 $date_start = $_POST['date_start'];
 $date_end = $_POST['date_end'];
 $mpdf = new \Mpdf\Mpdf(['mode' => 'utf-8', 'format' => 'A4-L']);
@@ -42,70 +41,71 @@ $content = '
 <div style="border: 0px solid black;padding:0px;">
   <table style="width:100%;margin-top:5px;" cellpadding=0 cellspacing=0 border="0">
       <tr>
-          <td style="width:40%;text-align:left;">
-              <span style="border-bottom:2px;font-size:16px;"><b>ลูกหนี้การค้าไม่รวม NPL</b> </span>
+          <td style="width:15%;text-align:left;">
+              <span style="border-bottom:2px;font-size:17px;"><b>รายงานยอดขาย</b> </span>
+          </td>
+          <td style="width:20%;text-align:left;">
+              <span style="border-bottom:2px;font-size:14px;">ระหว่างวันที่ &ensp;' . changeDate($date_start) . ' </span>
           </td>
           <td style="width:15%;text-align:left;">
-              <span style="border-bottom:2px;font-size:13px;">ณ. วันที่ &ensp;' . changeDate($date_start) . ' </span>
+              <span style="border-bottom:2px;font-size:14px;">ถึงวันที่ &ensp;' . changeDate($date_end) . ' </span>
           </td>
-          <td style="width:15%;text-align:left;">
-              <span style="border-bottom:2px;font-size:13px;">พิมพ์ ณ วันที่ &ensp;' . changeDate($datenow) . ' </span>
-          </td>
-          <td style="width:20%;" align="left">
+
+          <td style="width:23%;" align="left">
           สายบริการ : ' . $clientlinework['lw_code'] . '-' . $clientlinework['lw_name'] . '
           </td>
-          
+          <td style="width:12%;" align="right">
+          &ensp;
+          </td>
       </tr>
   </table>
   <table style="margin-top:12px;width:100%;border-collapse: collapse;" cellpadding=3 cellspacing=1 border="1">
         <tr style="border: 1px solid black;">
             <td style="background-color: #D3D3D3;padding:7px;text-align:center;font-size:13px;">ลำดับ</td>
+            <td style="background-color: #D3D3D3;font-size:13px;">สาย</td>
             <td style="background-color: #D3D3D3;font-size:13px;">เลขที่สัญญา</td>
             <td style="background-color: #D3D3D3;font-size:13px;">รหัสลูกค้า</td>
-            <td style="background-color: #D3D3D3;font-size:13px;">ชื่อ-สกุล</td>
-            <td style="background-color: #D3D3D3;font-size:13px;">เบอร์โทรติดต่อ</td>
+            <td style="background-color: #D3D3D3;font-size:13px;">ชื่อ-นามสกุลผู้ซื้อ</td>
             <td style="background-color: #D3D3D3;font-size:13px;">วันที่เริ่มสัญญา</td>
             <td style="background-color: #D3D3D3;font-size:13px;">วันที่หมดสัญญา</td>
-            <td style="background-color: #D3D3D3;font-size:13px;" align="right">รวมวัน</td>
-            <td style="background-color: #D3D3D3;font-size:13px;" align="right">งวดที่ค้าง</td>
-            <td style="background-color: #D3D3D3;font-size:13px;" align="right">ยอดที่ค้าง</td>
+            <td style="background-color: #D3D3D3;font-size:13px;width: 75px;" align="right">ต้นทุน</td>
+            <td style="background-color: #D3D3D3;font-size:13px;width: 75px;" align="right">ราคาขาย</td>
+            <td style="background-color: #D3D3D3;font-size:13px;width: 75px;" align="right">ชำระต่องวด</td>
+            <td style="background-color: #D3D3D3;font-size:13px;">พนักงานขาย</td>
         </tr>';
 $i = 1;
 $ii = 0;
-$sumall = 0;
-foreach ($report->listreportDebtorType6("contract", $date_start, $date_end) as $client) :
-    $clientsumpayments = $report->getInfoSumPayments($client['contract_id']); ////รวมยอดชำระเงินของเเต่ละคน
-
-    $deleteDate = DateDiff($client['cash_date_end'], $date_start); //ฟังค์ชั้นลบวันที่หมดสัญญากับวันที่เลือก
-
-    // $caloutstandingbalance = ($client['cash_principle'] + $client['cash_interest']) - $client['paysum_pay_amount'];
-    $caloutstandingbalance = ($client['cash_principle'] + $client['cash_interest']) - $clientsumpayments['sumPaymentAmount'];
-    $ChkNplDate = date("Y-m-d", strtotime("+30day", strtotime($client['cash_date_end'])));
-    // if ($caloutstandingbalance > 0 && $ChkNplDate <= $date_start) {
-    if ($caloutstandingbalance > 0 && $ChkNplDate >= $date_start) {
-        $content .= '
+$sumsellingprice = 0; //ราคาขาย
+$suminstallmentsdaily = 0; //ชำระต่องวด
+$sumcost = 0; //ต้นทุน
+foreach ($report->listreportsalesClient("contract", $date_start, $date_end) as $client) :
+    $content .= '
           <tr style="border: 1px solid black;">
             <td style="padding:6px;font-size:13px;text-align:center;">' . $i . '</td>
+            <td style="padding:6px;font-size:13px;">' . $client['lw_code'] . '</td>
             <td style="padding:6px;font-size:13px;">' . $client['contract_number'] . '</td>
             <td style="padding:6px;font-size:13px;">' . $client['cus_card_id'] . '</td>
             <td style="padding:6px;font-size:13px;">' . $client['setpre_name'] . $client['cus_firstname'] . ' ' . $client['cus_lastname'] . '</td>
-            <td style="padding:6px;font-size:13px;">' . $client['cus_mobile_phone'] . '</td>
             <td style="padding:6px;font-size:13px;">' . changeDate($client['cash_date_start']) . '</td>
             <td style="padding:6px;font-size:13px;">' . changeDate($client['cash_date_end']) . '</td>
-            <td style="padding:6px;font-size:13px;" align="right">' . $deleteDate . '</td>
-            <td style="padding:6px;font-size:13px;" align="right">' . number_format(($client['cash_number_installment'] - $client['paysum_pay_installment'])) . '</td>
-            <td style="padding:6px;font-size:13px;" align="right">' . number_format($caloutstandingbalance) . '</td>
+            <td style="padding:6px;font-size:13px;" align="right">' . number_format($client['cash_principle']) . '</td>
+            <td style="padding:6px;font-size:13px;" align="right">' . number_format($client['cash_principle'] + $client['cash_interest']) . '</td>
+            <td style="padding:6px;font-size:13px;" align="right">' . number_format($client['cash_installments_daily']) . '</td>
+            <td style="padding:6px;font-size:13px;">' . $client['contract_personnelhead_name'] . '</td>
           </tr>
           ';
-        $i++;
-        $ii++;
-        $sumall = $sumall + $caloutstandingbalance;
-    }
+    $i++;
+    $ii++;
+    $sumsellingprice = $sumsellingprice + ($client['cash_principle'] + $client['cash_interest']);
+    $suminstallmentsdaily = $suminstallmentsdaily + $client['cash_installments_daily'];
+    $sumcost = $sumcost + $client['cash_principle'];
 endforeach;
 $content .= '<tr style="border: 1px solid black;background-color: #D3D3D3;">
-                <td style="padding:6px;font-size:13px;" colspan="8">รวม ' . $ii . ' คน</td>
-                <td style="padding:6px;font-size:12px;" align="right">ยอดรวม</td>
-                <td style="padding:6px;font-size:12px;" align="right">' . number_format($sumall) . '</td>
+                <td style="padding:6px;font-size:13px;" colspan="7">รวม ' . $ii . ' คน</td>
+                <td style="padding:6px;font-size:12px;" align="right">' . number_format($sumcost) . '</td>
+                <td style="padding:6px;font-size:12px;" align="right">' . number_format($sumsellingprice) . '</td>
+                <td style="padding:6px;font-size:12px;" align="right">' . number_format($suminstallmentsdaily) . '</td>
+                <td style="padding:6px;font-size:12px;"></td>
             </tr>';
 $content .= '</table>
         </div>';
@@ -119,8 +119,9 @@ font-size: 8pt; color: #000000; font-weight: bold;padding-bottom:-15px;">
 </tr>
 </table>';
 
-// $mpdf->AddPage('L');
+
 $mpdf->SetHTMLFooter($footerreport);
+// $mpdf->AddPage('L');
 $mpdf->AddPageByArray([
     'margin-left' => 7,
     'margin-right' => 7,
@@ -132,6 +133,7 @@ $mpdf->AddPageByArray([
 $mpdf->WriteHTML($head);
 $mpdf->WriteHTML($content);
 // $mpdf->setFooter('{PAGENO} of {nbpg}');
+// $mpdf->setFooter('{PAGENO} / {nb}');
 $mpdf->Output();
 
 

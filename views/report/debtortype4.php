@@ -74,13 +74,15 @@ $i = 1;
 $ii = 0;
 $sumall = 0;
 foreach ($report->listreportDebtorType3("contract", $date_start, $date_end) as $client) :
-  $deleteDate = DateDiff($client['cash_date_end'], $date_start); //ฟังค์ชั้นลบวันที่หมดสัญญากับวันที่เลือก
+    $clientsumpayments = $report->getInfoSumPayments($client['contract_id']); ////รวมยอดชำระเงินของเเต่ละคน
+    $deleteDate = DateDiff($client['cash_date_end'], $date_start); //ฟังค์ชั้นลบวันที่หมดสัญญากับวันที่เลือก
 
-  $caloutstandingbalance = ($client['cash_principle'] + $client['cash_interest']) - $client['paysum_pay_amount'];
-  $ChkNplDate = date("Y-m-d", strtotime("+30day", strtotime($client['cash_date_end'])));
-  // if ($caloutstandingbalance > 0 && $ChkNplDate <= $date_start) {
-  if ($caloutstandingbalance > 0 && $ChkNplDate <= $date_start) {
-    $content .= '
+    // $caloutstandingbalance = ($client['cash_principle'] + $client['cash_interest']) - $client['paysum_pay_amount'];
+    $caloutstandingbalance = ($client['cash_principle'] + $client['cash_interest']) - $clientsumpayments['sumPaymentAmount'];
+    $ChkNplDate = date("Y-m-d", strtotime("+30day", strtotime($client['cash_date_end'])));
+    // if ($caloutstandingbalance > 0 && $ChkNplDate <= $date_start) {
+    if ($caloutstandingbalance > 0 && $ChkNplDate <= $date_start) {
+        $content .= '
           <tr style="border: 1px solid black;">
             <td style="padding:6px;font-size:13px;text-align:center;">' . $i . '</td>
             <td style="padding:6px;font-size:13px;">' . $client['contract_number'] . '</td>
@@ -94,10 +96,10 @@ foreach ($report->listreportDebtorType3("contract", $date_start, $date_end) as $
             <td style="padding:6px;font-size:13px;" align="right">' . number_format($caloutstandingbalance) . '</td>
           </tr>
           ';
-    $i++;
-    $ii++;
-    $sumall = $sumall + $caloutstandingbalance;
-  }
+        $i++;
+        $ii++;
+        $sumall = $sumall + $caloutstandingbalance;
+    }
 endforeach;
 $content .= '<tr style="border: 1px solid black;background-color: #D3D3D3;">
                 <td style="padding:6px;font-size:13px;" colspan="8">รวม ' . $ii . ' คน</td>
@@ -119,10 +121,10 @@ font-size: 8pt; color: #000000; font-weight: bold;padding-bottom:-15px;">
 // $mpdf->AddPage('L');
 $mpdf->SetHTMLFooter($footerreport);
 $mpdf->AddPageByArray([
-  'margin-left' => 7,
-  'margin-right' => 7,
-  'margin-top' => 13,
-  'margin-bottom' => 10,
+    'margin-left' => 7,
+    'margin-right' => 7,
+    'margin-top' => 13,
+    'margin-bottom' => 10,
 ]);
 // $stylesheet = file_get_contents('../../public/plugins/fontawesome-free/css/all.min.css');
 // $mpdf->WriteHTML($stylesheet, 1);
